@@ -88,12 +88,12 @@ module.exports = (screenName, config, index = {
   // check if we have a saved analysis of that user withing the desired time interval
   // if (useCache === '1') {
   const cacheInterval = library.getCacheInterval();
-
+  console.info('\n Procurando analysis para: ' + user.id_str);
   const cachedResponse = await Cache.findOne({
     attributes: ['simple_analysis', 'full_analysis', 'times_served', 'id'],
     where: {
       '$analysis.twitter_user_id$': user.id_str,
-      '$analysis.createdAt$': { [Op.between]: [cacheInterval, new Date()] },
+      // '$analysis.createdAt$': { [Op.between]: [cacheInterval, new Date()] },
     },
     include: 'analysis'
   });
