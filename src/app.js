@@ -121,6 +121,7 @@ app.get('/botometer', async (req, res) => {
   const origin = isAdmin ? 'admin' : 'website';
   const wantsDocument = req.query.documento;
   const lang = req.headers["accept-language"];
+  const isFullAnalysis = 0;
 
   const referer = req.get('referer');
   const sentimentLang = library.getDefaultLanguage(referer);
@@ -137,7 +138,7 @@ app.get('/botometer', async (req, res) => {
   } else if (target === 'profile') {
     try {
       const result = await spottingbot(profile, config, { friend: false },
-        sentimentLang, getData, cacheInterval, verbose, origin, wantsDocument, lang).catch((err) => err);
+        sentimentLang, getData, cacheInterval, verbose, origin, wantsDocument, isFullAnalysis, lang).catch((err) => err);
 
       if (!result || result.errors || result.error) {
         let toSend = result;
