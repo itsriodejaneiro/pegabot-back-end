@@ -70,9 +70,7 @@ module.exports = (screenName, config, index = {
   // const newRequest = await Request.create({ screenName, gitHead: await library.getGitHead(), origin });
 
   // get tweets timeline. We will use it for both the user and sentiment/temporal/network calculations
-  console.info('\nDisparo de req para o twitter: ' + new Date());
   const apiAnswer = await client.get('statuses/user_timeline', param).catch((err) => err);
-  console.info('\nretorno da req para o twitter: ' + new Date());
 
   // if there's an error, save the api response as is and update the new request entry with it
   if (!apiAnswer || apiAnswer.error || apiAnswer.errors || apiAnswer.length === 0) {
@@ -86,43 +84,39 @@ module.exports = (screenName, config, index = {
   const { timeline, user } = library.getTimelineUser(apiAnswer);
 
   // check if we have a saved analysis of that user withing the desired time interval
-  // if (useCache === '1') {
-  const cacheInterval = library.getCacheInterval();
-  console.info('\n Procurando analysis para: ' + user.id_str);
-  const cachedResponse = await Cache.findOne({
-    attributes: ['simple_analysis', 'full_analysis', 'times_served', 'id'],
-    where: {
-      '$analysis.twitter_user_id$': user.id_str,
-      // '$analysis.createdAt$': { [Op.between]: [cacheInterval, new Date()] },
-    },
-    include: 'analysis'
-  });
+  if (useCache === '1') {
+    const cacheInterval = library.getCacheInterval();
 
-  if (cachedResponse) {
-    console.info('encontrou cache\n');
-    const currentTimesServed = cachedResponse['times_served'];
-    const responseToUse = isFullAnalysis ? cachedResponse['full_analysis'] : cachedResponse['simple_analysis'];
+    const cachedResponse = await Cache.findOne({
+      attributes: ['simple_analysis', 'full_analysis', 'times_served', 'id'],
+      where: {
+        '$analysis.twitter_user_id$': user.id_str,
+        '$analysis.createdAt$': { [Op.between]: [cacheInterval, new Date()] },
+      },
+      include: 'analysis'
+    });
 
-    if (responseToUse) {
-      console.info('encontrou response to use\n');
-      const cachedJSON = JSON.parse(responseToUse);
+    if (cachedResponse) {
+      const currentTimesServed = cachedResponse['times_served'];
+      const responseToUse = isFullAnalysis ? cachedResponse['full_analysis'] : cachedResponse['simple_analysis'];
 
-      if (isFullAnalysis) {
-        const fullAnalysisRet = await library.buildAnalyzeReturn(cachedJSON);
-        resolve(fullAnalysisRet);
-        return fullAnalysisRet;
+      if (responseToUse) {
+        const cachedJSON = JSON.parse(responseToUse);
+
+        if (isFullAnalysis) {
+          const fullAnalysisRet = await library.buildAnalyzeReturn(cachedJSON);
+          resolve(fullAnalysisRet);
+          return fullAnalysisRet;
+        }
+
+        cachedResponse.times_served = currentTimesServed + 1;
+        await cachedResponse.save();
+
+        resolve(cachedJSON);
+        return cachedJSON;
       }
-
-      cachedResponse.times_served = currentTimesServed + 1;
-      await cachedResponse.save();
-      console.info('retornando response do cache\n');
-
-      resolve(cachedJSON);
-      return cachedJSON;
     }
   }
-  // }
-  console.info('fazendo analise sem cache\n');
 
   // get and store rate limits
   if (getData && timeline) timeline.rateLimit = await library.getRateStatus(timeline);
