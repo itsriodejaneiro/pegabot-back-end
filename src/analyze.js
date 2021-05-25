@@ -70,9 +70,9 @@ module.exports = (screenName, config, index = {
   // const newRequest = await Request.create({ screenName, gitHead: await library.getGitHead(), origin });
 
   // get tweets timeline. We will use it for both the user and sentiment/temporal/network calculations
-  console.info('\nDisparo de req para o twitter: ' + Date.new());
+  console.info('\nDisparo de req para o twitter: ' + new Date());
   const apiAnswer = await client.get('statuses/user_timeline', param).catch((err) => err);
-  console.info('\nretorno da req para o twitter: ' + Date.new());
+  console.info('\nretorno da req para o twitter: ' + new Date());
 
   // if there's an error, save the api response as is and update the new request entry with it
   if (!apiAnswer || apiAnswer.error || apiAnswer.errors || apiAnswer.length === 0) {
