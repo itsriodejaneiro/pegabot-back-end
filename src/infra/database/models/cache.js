@@ -37,7 +37,7 @@ const CacheModel = class Cache extends Model {
 
 CacheModel.associate = (models) => {
   CacheModel.belongsTo(models.Analysis, {
-    as: 'analysis', foreignKey: 'id', sourceKey: 'analysisID', onDelete: 'CASCADE', onUpdate: 'CASCADE',
+    as: 'analysis', foreignKey: 'analysis_id', sourceKey: 'analysisID', onDelete: 'CASCADE', onUpdate: 'CASCADE',
   });
 };
 
