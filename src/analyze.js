@@ -339,10 +339,8 @@ module.exports = (screenName, config, index = {
       data.hashtags = hashtagsUsed;
       data.mentions = mentionsUsed;
 
-      if (getData) {
-        object.twitter_data = data;
-        object.rate_limit = timeline.rateLimit;
-      }
+      object.twitter_data = data;
+      object.rate_limit = timeline.rateLimit;
 
       // save Analysis Data on database
       const { id: newAnalysisID } = await Analysis.create({
