@@ -364,7 +364,7 @@ module.exports = (screenName, config, index = {
       const detailsAsString = JSON.stringify(details);
       await Cache.create({
         analysis_id: newAnalysisID,
-        simple_analysis: JSON.stringify(object),
+        simple_analysis: object,
         full_analysis: detailsAsString,
         updatedAt: null
       });
