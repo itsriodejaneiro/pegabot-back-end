@@ -98,9 +98,13 @@ module.exports = (screenName, config, index = {
 
     if (cachedResponse) {
       const currentTimesServed = cachedResponse['times_served'];
-      const cachedJSON = isFullAnalysis ? cachedResponse['full_analysis'] : cachedResponse['simple_analysis'];
+      let cachedJSON = isFullAnalysis ? cachedResponse['full_analysis'] : cachedResponse['simple_analysis'];
 
       if (cachedJSON) {
+        if (typeof cachedJSON == 'string') {
+          cachedJSON = JSON.parse(cachedJSON)
+        }
+
         if (isFullAnalysis) {
           const fullAnalysisRet = await library.buildAnalyzeReturn(cachedJSON);
           resolve(fullAnalysisRet);
