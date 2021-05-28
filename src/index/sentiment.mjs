@@ -31,9 +31,9 @@ export default async (data, defaultLanguage = 'pt', explanations = [], extraDeta
   let happyCount = 0;
   let sadCount = 0;
 
-  async.each(tweets, (tweet) => {
-    let { lang } = tweet;
-    const { text } = tweet;
+  tweets.forEach((current) => {
+    let { lang } = current;
+    const { text } = current;
 
     let res = {};
 
@@ -41,7 +41,13 @@ export default async (data, defaultLanguage = 'pt', explanations = [], extraDeta
     if (!lang || ['und', 'in'].includes(lang)) lang = defaultLanguage;
 
     // get sentiment score for tweet text
-    res = sentiment(text, lang);
+    try {
+      res = sentiment(text, lang);
+    }
+    catch (e) {
+      console.error('\nerro na análise de sentimento: ' + e);
+    }
+
     if (!savedRes) {
       explanations.push(`Exemplo do score do tweet: ${res.comparative}`);
       savedRes = true;
@@ -61,30 +67,30 @@ export default async (data, defaultLanguage = 'pt', explanations = [], extraDeta
 
     // Saving positive tweet sample
     if (!tweetExemplo.positive && res.positive) {
-      tweet.url = extraDetails.TWITTER_LINK + '/status/' + tweet.id_str;
-      tweetExemplo.positive = tweet;
+      current.url = extraDetails.TWITTER_LINK + '/status/' + current.id_str;
+      tweetExemplo.positive = current;
 
       usedForSampling = 1;
     }
 
     // Saving negative tweet sample
     if (!tweetExemplo.negative && res.negative && usedForSampling === 0) {
-      tweet.url = extraDetails.TWITTER_LINK + '/status/' + tweet.id_str;
-      tweetExemplo.negative = tweet;
+      current.url = extraDetails.TWITTER_LINK + '/status/' + current.id_str;
+      tweetExemplo.negative = current;
 
       usedForSampling = 1;
     }
 
     // Saving neutral tweet sample
     if (!tweetExemplo.neutral && res.comparative === 0 && usedForSampling === 0) {
-      tweet.url = extraDetails.TWITTER_LINK + '/status/' + tweet.id_str;
-      tweetExemplo.neutral = tweet;
+      current.url = extraDetails.TWITTER_LINK + '/status/' + current.id_str;
+      tweetExemplo.neutral = current;
 
       usedForSampling = 1;
     }
 
     if (res.comparative === 0) sentimentNeutralSum += 1;
-  }, (err) => { });
+  }, (err) => { console.log('\n teve erro: ' + err) });
 
   explanations.push(`Temos ${sentimentNeutralSum} tweet(s) neutros`);
 
