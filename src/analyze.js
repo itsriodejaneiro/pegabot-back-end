@@ -23,10 +23,11 @@ const weights = {};
 
 module.exports = (screenName, config, index = {
   user: true, friend: true, network: true, temporal: true, sentiment: true,
-}, sentimentLang, getData, cacheInterval, verbose, origin, wantDocument, isFullAnalysis, fullAnalysisCache, cb) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+}, sentimentLang, getData, cacheInterval, verbose, origin, wantDocument, isFullAnalysis, fullAnalysisCache, cacheBust, cb) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
 
   let useCache = process.env.USE_CACHE;
-  if (typeof fullAnalysisCache != 'undefined' && fullAnalysisCache === 0) useCache = 0;
+  console.log(cacheBust)
+  if ((typeof fullAnalysisCache != 'undefined' && fullAnalysisCache === 0) || cacheBust) useCache = 0;
 
   if (!screenName || !config) {
     const error = 'You need to provide an username to analyze and a config for twitter app';
@@ -95,8 +96,9 @@ module.exports = (screenName, config, index = {
       },
       include: 'analysis'
     });
-
+    // console.log('\nprocurando cache');
     if (cachedResponse) {
+      //   console.log('\nachou o cache');
       const currentTimesServed = cachedResponse['times_served'];
       let cachedJSON = isFullAnalysis ? cachedResponse['full_analysis'] : cachedResponse['simple_analysis'];
 
@@ -118,6 +120,8 @@ module.exports = (screenName, config, index = {
         return cachedJSON;
       }
     }
+    // console.log('\nnão achou cache');
+
   }
 
   // get and store rate limits
@@ -140,6 +144,7 @@ module.exports = (screenName, config, index = {
           explanations.push(`Peso do Score Network: ${res[1]}`);
           weights.USER_INDEX_WEIGHT = res[1];
           indexCount += res[1];
+          // console.log('\n indice de user:' + res);
           callback(null, res[0], data);
         }
       } catch (error) {
@@ -168,9 +173,11 @@ module.exports = (screenName, config, index = {
         if (index.friend === false) {
           callback();
         } else {
+
           param.count = 200;
           const data = await client.get('friends/list', param);
           const res = await friendsIndex(data);
+          // console.log('\n friends:' + res);
           indexCount += res[1];
           callback(null, res[0], data);
         }
@@ -184,6 +191,7 @@ module.exports = (screenName, config, index = {
         if (index.temporal === false && index.network === false && index.sentiment === false) {
           callback();
         } else {
+
           param.count = 200;
           const data = timeline;
           let res1 = [];
@@ -195,6 +203,7 @@ module.exports = (screenName, config, index = {
             explanations.push(`Peso do Score Temporal: ${res1[1]}`);
             weights.TEMPORAL_INDEX_WEIGHT = res1[1];
 
+            // console.log('\n temporal: ' + res1[0]);
             indexCount += res1[1];
           }
           if (index.network !== false) {
@@ -205,13 +214,19 @@ module.exports = (screenName, config, index = {
             hashtagsUsed = res2[2]; // eslint-disable-line prefer-destructuring
             mentionsUsed = res2[3]; // eslint-disable-line prefer-destructuring
             indexCount += res2[1];
+            // console.log('\n network: ' + res2[0]);
+
           }
           if (index.sentiment !== false) {
+            // console.log('\n começando analise de sentimento');
+
             res3 = await sentimentIndex(data, sentimentLang, explanations, extraDetails);
             explanations.push(`Score Sentiment: ${res3[0]}`);
             explanations.push(`Peso do Score Sentiment: ${res3[1]}`);
             weights.SENTIMENT_INDEX_WEIGHT = res3[1];
             indexCount += res3[1];
+            // console.log('\n sentiment: ' + res3[0]);
+
           }
           callback(null, [res1[0], res2[0], res3[0]]);
         }
@@ -227,7 +242,6 @@ module.exports = (screenName, config, index = {
         reject(err);
         return err;
       }
-
       explanations.push('\nCálculo do resultado final\n');
 
       // Save all results in the correct variable
@@ -327,6 +341,7 @@ module.exports = (screenName, config, index = {
           user_profile_language: user.lang,
         }],
       };
+      // console.log(object);
 
       // add data from twitter to complement return (if getDate is true) and save to database
       const data = {};
@@ -392,7 +407,7 @@ module.exports = (screenName, config, index = {
       if (wantDocument) object.profiles[0].bot_probability.extraDetails = details;
 
       if (newAnalysisID) object.analysis_id = newAnalysisID;
-
+      // console.log(object);
       if (cb) cb(null, object);
       resolve(object);
       return object;
