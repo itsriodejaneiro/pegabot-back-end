@@ -23,10 +23,10 @@ const weights = {};
 
 module.exports = (screenName, config, index = {
   user: true, friend: true, network: true, temporal: true, sentiment: true,
-}, sentimentLang, getData, cacheInterval, verbose, origin, wantDocument, isFullAnalysis, fullAnalysisCache, cacheBust, cb) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+}, sentimentLang, getData, cacheInterval, verbose, origin, wantDocument, isFullAnalysis, fullAnalysisCache, cacheBust, twitterID, cb) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
 
   let useCache = process.env.USE_CACHE;
-  console.log(cacheBust)
+
   if ((typeof fullAnalysisCache != 'undefined' && fullAnalysisCache === 0) || cacheBust) useCache = 0;
 
   if (!screenName || !config) {
@@ -75,7 +75,36 @@ module.exports = (screenName, config, index = {
 
   // if there's an error, save the api response as is and update the new request entry with it
   if (!apiAnswer || apiAnswer.error || apiAnswer.errors || apiAnswer.length === 0) {
-    // TODO: Salvar erro
+    // Check if there's a saved error for this handle recently
+    // Using ERROR_CACHE_INTERVAL env
+    const cachedErrorAnalysis = Analysis.findOne({
+      where: {
+        twitter_handle: screenName,
+        // createdAt: { [Op.between]: ['1_day', new Date()] }
+      }
+    });
+
+    if (!cachedErrorAnalysis) {
+      const errorAnalysis = await Analysis.create({ twitter_handle: screenName });
+
+      const error = apiAnswer.errors[0];
+      let errorMessage;
+      if (error.code === 34) {
+        errorMessage = 'Esse usuário não existe'
+      }
+      else if (error.error === 'Not authorized.') {
+        errorMessage = 'Sem permissão para acessar. Usuário pode estar bloqueado/suspendido.'
+      }
+      else {
+        errorMessage = 'Erro ao procurar pelo perfil'
+      }
+
+      const errorCache = await Cache.create({
+        analysis_id: errorAnalysis.id,
+        simple_analysis: { metadata: { error: error }, message: errorMessage }
+      })
+    }
+
     if (cb) cb(apiAnswer, null);
     reject(apiAnswer);
     return apiAnswer;
@@ -115,6 +144,8 @@ module.exports = (screenName, config, index = {
 
         cachedResponse.times_served = currentTimesServed + 1;
         await cachedResponse.save();
+
+        cachedJSON.twitter_data.usedCache = true
 
         resolve(cachedJSON);
         return cachedJSON;
