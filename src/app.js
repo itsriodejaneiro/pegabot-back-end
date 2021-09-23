@@ -281,7 +281,7 @@ app.get('/analyze', async (req, res) => {
   } else if (target === 'profile') {
     try {
       const result = await spottingbot(profile, config, { friend: false },
-        sentimentLang, getData, cacheInterval, verbose, origin, wantsDocument, fullAnalysisCache, isFullAnalysis).catch((err) => err);
+        sentimentLang, getData, cacheInterval, verbose, origin, wantsDocument, isFullAnalysis, fullAnalysisCache, 0, undefined, lang).catch((err) => err);
 
       if (!result || result.errors || result.error) {
         let toSend = result;

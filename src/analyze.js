@@ -23,7 +23,7 @@ const weights = {};
 
 module.exports = (screenName, config, index = {
   user: true, friend: true, network: true, temporal: true, sentiment: true,
-}, sentimentLang, getData, cacheInterval, verbose, origin, wantDocument, isFullAnalysis, fullAnalysisCache, cacheBust, twitterID, cb) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+}, sentimentLang, getData, cacheInterval, verbose, origin, wantDocument, isFullAnalysis, fullAnalysisCache, cacheBust, twitterID, lang, cb) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
 
   let useCache = process.env.USE_CACHE;
 
@@ -137,7 +137,7 @@ module.exports = (screenName, config, index = {
         }
 
         if (isFullAnalysis) {
-          const fullAnalysisRet = await library.buildAnalyzeReturn(cachedJSON);
+          const fullAnalysisRet = await library.buildAnalyzeReturn(cachedJSON, lang);
           resolve(fullAnalysisRet);
           return fullAnalysisRet;
         }
